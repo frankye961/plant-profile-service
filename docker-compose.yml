@@ -1,6 +1,6 @@
 services:
   device-registry-service:
-    image: device-registry-service:latest
+    image: plant-profile-service:latest
     container_name: plant-profile-service
     restart: unless-stopped
 
@@ -10,7 +10,7 @@ services:
 
     environment:
       # Spring Boot
-      SERVER_PORT: "8085"
+      SERVER_PORT: "8086"
       SPRING_PROFILES_ACTIVE: "docker"
 
       # Kafka (remote)

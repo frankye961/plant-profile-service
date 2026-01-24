@@ -229,32 +229,6 @@
                             </configOptions>
                         </configuration>
                     </execution>
-                    <execution>
-                        <id>outbound</id>
-                        <goals>
-                            <goal>generate</goal>
-                        </goals>
-                        <configuration>
-                            <inputSpec>${project.basedir}/src/main/resources/openapi/device-registry-outbound.yaml</inputSpec>
-                            <generatorName>spring</generatorName>
-                            <apiPackage>com.smart.watering.model</apiPackage>
-                            <modelPackage>com.smart.watering.model</modelPackage>
-                            <supportingFilesToGenerate>ApiUtil.java</supportingFilesToGenerate>
-                            <configOptions>
-                                <!-- OpenAPI Generator flag name hasn't caught up to Boot 4; keep it enabled for Spring Boot-style output -->
-                                <useSpringBoot3>true</useSpringBoot3>
-                                <useJakartaEe>true</useJakartaEe>
-                                <delegatePattern>true</delegatePattern>
-                                <useBeanValidation>true</useBeanValidation>
-                                <useTags>true</useTags>
-                                <generateBuilders>true</generateBuilders>
-                                <useLombok>true</useLombok>
-                                <useJsonNullable>false</useJsonNullable>
-                                <openApiNullable>false</openApiNullable>
-                                <dateLibrary>java25</dateLibrary>
-                            </configOptions>
-                        </configuration>
-                    </execution>
                 </executions>
             </plugin>
         </plugins>
