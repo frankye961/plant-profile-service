@@ -161,7 +161,11 @@
             <version>1.6.3</version>
             <scope>provided</scope>
         </dependency>
-
+        <dependency>
+            <groupId>com.openai</groupId>
+            <artifactId>openai-java</artifactId>
+            <version>4.0.0</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -210,6 +214,32 @@
                         </goals>
                         <configuration>
                             <inputSpec>${project.basedir}/src/main/resources/openapi/iot-plant-event.openapi.yaml</inputSpec>
+                            <generatorName>spring</generatorName>
+                            <apiPackage>com.smart.watering.model</apiPackage>
+                            <modelPackage>com.smart.watering.model</modelPackage>
+                            <supportingFilesToGenerate>ApiUtil.java</supportingFilesToGenerate>
+                            <configOptions>
+                                <!-- OpenAPI Generator flag name hasn't caught up to Boot 4; keep it enabled for Spring Boot-style output -->
+                                <useSpringBoot3>true</useSpringBoot3>
+                                <useJakartaEe>true</useJakartaEe>
+                                <delegatePattern>true</delegatePattern>
+                                <useBeanValidation>true</useBeanValidation>
+                                <useTags>true</useTags>
+                                <generateBuilders>true</generateBuilders>
+                                <useLombok>true</useLombok>
+                                <useJsonNullable>false</useJsonNullable>
+                                <openApiNullable>false</openApiNullable>
+                                <dateLibrary>java25</dateLibrary>
+                            </configOptions>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <id>plant-outbound-message-generation</id>
+                        <configuration>
+                            <inputSpec>${project.basedir}/src/main/resources/openapi/plant-profile-event-outbound.yml</inputSpec>
                             <generatorName>spring</generatorName>
                             <apiPackage>com.smart.watering.model</apiPackage>
                             <modelPackage>com.smart.watering.model</modelPackage>

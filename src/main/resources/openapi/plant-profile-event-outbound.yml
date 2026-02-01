@@ -1,0 +1,439 @@
+openapi: 3.0.3
+info:
+  title: Plant Profile Events API
+  version: 1.0.0
+  description: >
+    OpenAPI schemas for outbound Kafka messages produced by plant-profile-service.
+    These are domain events published to topic `iot.plant.profile.events`.
+
+servers: []
+
+paths: {}
+
+components:
+  schemas:
+
+    # ----------------------------
+    # Event Union (optional helper)
+    # ----------------------------
+    PlantProfileEvent:
+      oneOf:
+        - $ref: "#/components/schemas/ZoneProfileUpsertedEvent"
+        - $ref: "#/components/schemas/ZoneProfileDeactivatedEvent"
+      discriminator:
+        propertyName: type
+        mapping:
+          ZONE_PROFILE_UPSERTED: "#/components/schemas/ZoneProfileUpsertedEvent"
+          ZONE_PROFILE_DEACTIVATED: "#/components/schemas/ZoneProfileDeactivatedEvent"
+
+    # ----------------------------
+    # Outbound Events
+    # ----------------------------
+    ZoneProfileUpsertedEvent:
+      type: object
+      required:
+        - type
+        - version
+        - messageId
+        - ts
+        - zoneId
+        - profileVersion
+        - profile
+        - gates
+      properties:
+        type:
+          type: string
+          enum: [ZONE_PROFILE_UPSERTED]
+          description: Event type discriminator.
+        version:
+          type: integer
+          format: int32
+          enum: [1]
+          description: Event schema version.
+        messageId:
+          type: string
+          format: uuid
+          description: Unique event id.
+        correlationId:
+          type: string
+          format: uuid
+          nullable: true
+          description: Correlation id (optional).
+        ts:
+          type: string
+          format: date-time
+          description: Event creation timestamp (UTC recommended).
+        zoneId:
+          type: string
+          minLength: 1
+          maxLength: 128
+          description: Stable zone identifier (e.g., pot-03).
+        profileVersion:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Monotonic profile version.
+        profile:
+          $ref: "#/components/schemas/ZoneProfile"
+        gates:
+          $ref: "#/components/schemas/DeviceGates"
+        deviceState:
+          $ref: "#/components/schemas/DeviceStateView"
+          nullable: true
+          description: >
+            Optional device state snapshot used to compute gates. Present if plant-profile-service
+            listens to device.registry.v1 and includes device-aware gating.
+
+    ZoneProfileDeactivatedEvent:
+      type: object
+      required:
+        - type
+        - version
+        - messageId
+        - ts
+        - zoneId
+        - profileVersion
+        - active
+      properties:
+        type:
+          type: string
+          enum: [ZONE_PROFILE_DEACTIVATED]
+          description: Event type discriminator.
+        version:
+          type: integer
+          format: int32
+          enum: [1]
+          description: Event schema version.
+        messageId:
+          type: string
+          format: uuid
+          description: Unique event id.
+        correlationId:
+          type: string
+          format: uuid
+          nullable: true
+          description: Correlation id (optional).
+        ts:
+          type: string
+          format: date-time
+          description: Event creation timestamp (UTC recommended).
+        zoneId:
+          type: string
+          minLength: 1
+          maxLength: 128
+          description: Zone identifier.
+        profileVersion:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Monotonic profile version.
+        active:
+          type: boolean
+          enum: [false]
+          description: Always false for deactivation events.
+
+    # ----------------------------
+    # Core Profile Model
+    # ----------------------------
+    ZoneProfile:
+      type: object
+      required:
+        - zoneId
+        - active
+        - thresholds
+        - constraints
+        - calibrationPolicy
+      properties:
+        zoneId:
+          type: string
+          minLength: 1
+          maxLength: 128
+          description: Stable zone identifier (same as event.zoneId).
+          example: pot-03
+        zoneName:
+          type: string
+          nullable: true
+          minLength: 1
+          maxLength: 256
+          description: Friendly zone name (display only).
+          example: Basil pot
+        linkedDeviceId:
+          type: string
+          nullable: true
+          minLength: 1
+          maxLength: 128
+          description: Device currently associated with this zone (if known).
+          example: b43a45349704
+        active:
+          type: boolean
+          description: Whether the zone is active.
+        thresholds:
+          $ref: "#/components/schemas/ZoneThresholds"
+        constraints:
+          $ref: "#/components/schemas/WateringConstraints"
+        calibrationPolicy:
+          $ref: "#/components/schemas/CalibrationPolicy"
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the profile was last updated (optional).
+        source:
+          $ref: "#/components/schemas/ProfileUpdateSource"
+          nullable: true
+          description: Who/what last updated the profile (optional).
+
+    ZoneThresholds:
+      type: object
+      required:
+        - soilMoistureCriticalPct
+        - soilMoistureLowPct
+        - soilMoistureTargetMinPct
+        - soilMoistureTargetMaxPct
+      properties:
+        soilMoistureCriticalPct:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          description: Critical threshold; below means urgent.
+          example: 30
+        soilMoistureLowPct:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          description: Low threshold; below means drying.
+          example: 40
+        soilMoistureTargetMinPct:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          description: Target minimum; below means needs watering (normal).
+          example: 55
+        soilMoistureTargetMaxPct:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          description: Target maximum; above is considered "wet enough".
+          example: 75
+        tempMinC:
+          type: number
+          format: float
+          nullable: true
+          minimum: -50
+          maximum: 120
+          description: Optional min temperature threshold.
+        tempMaxC:
+          type: number
+          format: float
+          nullable: true
+          minimum: -50
+          maximum: 120
+          description: Optional max temperature threshold.
+        lightMinRaw:
+          type: integer
+          format: int32
+          nullable: true
+          minimum: 0
+          maximum: 4095
+          description: Optional minimum light raw threshold.
+
+    WateringConstraints:
+      type: object
+      required:
+        - cooldownSeconds
+        - maxEventsPerDay
+      properties:
+        cooldownSeconds:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 604800
+          description: Minimum wait between watering actions (seconds).
+          example: 21600
+        maxEventsPerDay:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 24
+          description: Daily limit in watering events (preferred over ml when pot volume is unknown).
+          example: 2
+        quietHours:
+          $ref: "#/components/schemas/QuietHours"
+          nullable: true
+          description: Optional no-watering time window.
+
+    QuietHours:
+      type: object
+      required:
+        - start
+        - end
+      properties:
+        start:
+          type: string
+          pattern: '^\d{2}:\d{2}$'
+          description: Start time in local zone time (HH:mm).
+          example: "22:00"
+        end:
+          type: string
+          pattern: '^\d{2}:\d{2}$'
+          description: End time in local zone time (HH:mm).
+          example: "07:00"
+        timezone:
+          type: string
+          nullable: true
+          description: Optional IANA timezone for interpreting quiet hours.
+          example: Europe/Warsaw
+
+    CalibrationPolicy:
+      type: object
+      required:
+        - trustDevicePct
+      properties:
+        trustDevicePct:
+          type: boolean
+          description: If true, prefer soilMoisturePct from the device/bridge.
+          example: true
+        offsetPct:
+          type: number
+          format: float
+          nullable: true
+          minimum: -100
+          maximum: 100
+          description: Optional offset applied to device pct (pctCorrected = pct + offset).
+        rawToPct:
+          $ref: "#/components/schemas/RawToPctCalibration"
+          nullable: true
+          description: Optional calibration to compute pct from raw.
+        curve:
+          type: array
+          nullable: true
+          description: Optional piecewise curve points to map raw->pct (interpolation).
+          items:
+            $ref: "#/components/schemas/CalibrationCurvePoint"
+          maxItems: 50
+
+    RawToPctCalibration:
+      type: object
+      required:
+        - dryRaw
+        - wetRaw
+      properties:
+        dryRaw:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 4095
+          description: Raw ADC value representing "dry" soil.
+          example: 900
+        wetRaw:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 4095
+          description: Raw ADC value representing "wet" soil.
+          example: 300
+        invert:
+          type: boolean
+          nullable: true
+          description: >
+            Optional flag if your sensor direction is inverted.
+            If omitted, consumers may infer direction from dryRaw/wetRaw.
+          default: false
+
+    CalibrationCurvePoint:
+      type: object
+      required:
+        - raw
+        - pct
+      properties:
+        raw:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 4095
+        pct:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+
+    ProfileUpdateSource:
+      type: string
+      description: Origin of the profile update.
+      enum: [BOOTSTRAP, ADMIN, AI_SUGGESTION, MIGRATION]
+
+    # ----------------------------
+    # Device-aware gating (computed)
+    # ----------------------------
+    DeviceGates:
+      type: object
+      required:
+        - wateringAllowed
+        - blockedReason
+      properties:
+        wateringAllowed:
+          type: boolean
+          description: Whether watering actions are allowed for this zone right now.
+        blockedReason:
+          $ref: "#/components/schemas/BlockedReason"
+        notes:
+          type: string
+          nullable: true
+          maxLength: 512
+          description: Optional human-readable detail.
+
+    BlockedReason:
+      type: string
+      enum:
+        - OK
+        - DEVICE_BLOCKED
+        - DEVICE_OFFLINE
+        - DEVICE_LOW_BATTERY
+        - PROFILE_INACTIVE
+        - UNKNOWN_DEVICE
+
+    # ----------------------------
+    # Optional device snapshot included in event
+    # ----------------------------
+    DeviceStateView:
+      type: object
+      required:
+        - deviceId
+        - status
+      properties:
+        deviceId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        status:
+          $ref: "#/components/schemas/DeviceStatus"
+        lastSeen:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last time device was observed (server time recommended).
+        batteryMv:
+          type: integer
+          format: int32
+          nullable: true
+          minimum: 0
+          maximum: 20000
+        rssi:
+          type: integer
+          format: int32
+          nullable: true
+          minimum: -200
+          maximum: 0
+
+    DeviceStatus:
+      type: string
+      description: Device operational status from device-registry-service.
+      enum:
+        - ACTIVE
+        - BLOCKED
+        - INACTIVE
+        - UNKNOWN
