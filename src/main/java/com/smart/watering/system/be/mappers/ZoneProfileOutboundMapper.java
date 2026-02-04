@@ -22,7 +22,7 @@ public interface ZoneProfileOutboundMapper {
             @Mapping(target = "constraints", ignore = true),
             @Mapping(target = "calibrationPolicy", ignore = true)
     })
-    ZoneProfile toBootstrapProfile(IoTPlantEvent event);
+    ZoneProfileUpsertedEvent toBootstrapProfile(IoTPlantEvent event);
 
     /**
      * Bootstrap defaults (no user input) — conservative generic plant defaults.

@@ -1,8 +1,8 @@
 package com.smart.watering.system.be.service;
 
-import com.smart.watering.model.IoTPlantEvent;
-import com.smart.watering.model.Zone;
-import com.smart.watering.model.ZoneProfile;
+import com.smart.watering.model.*;
+import com.smart.watering.system.be.ai.engine.AiEngine;
+import com.smart.watering.system.be.ai.model.records.ZoneSuggestion;
 import com.smart.watering.system.be.database.model.ZoneProfiling;
 import com.smart.watering.system.be.database.repositories.ZoneProfileRepository;
 import com.smart.watering.system.be.mappers.ZoneMapper;
@@ -19,16 +19,19 @@ public class PlantProfileService {
     private final ZoneProfileRepository zoneProfileRepository;
     private final ZoneProfileOutboundMapper mapper;
     private final ZoneMapper zoneMapper;
+    private final AiEngine aiEngine;
 
     @Autowired
     public PlantProfileService(ZoneProfileRepository zoneProfileRepository, ZoneProfileOutboundMapper mapper,
-                               ZoneMapper zoneMapper) {
+                               ZoneMapper zoneMapper,
+                               AiEngine aiEngine) {
         this.zoneProfileRepository = zoneProfileRepository;
         this.mapper = mapper;
         this.zoneMapper = zoneMapper;
+        this.aiEngine = aiEngine;
     }
 
-    public Mono<ZoneProfile> elaborateZoneProfiling(IoTPlantEvent event){
+    public Mono<ZoneProfileUpsertedEvent> elaborateZoneProfiling(IoTPlantEvent event){
         String zoneId = event.getZone().getZoneId();
         Zone zone = event.getZone();
 
@@ -43,7 +46,13 @@ public class PlantProfileService {
         return zoneProfileRepository.save(zoneProfile);
     }
 
-    private ZoneProfile mapOutbound(IoTPlantEvent event){
+    private ZoneThresholds enrichZoneThreshold(Zone zone){
+        ZoneSuggestion suggestion = aiEngine.retrieveZoneSuggestion(zone);
+        log.info("suggestion from ai: {}", suggestion);
+        return null; //TODO enrich with suggestn from ai
+    }
+
+    private ZoneProfileUpsertedEvent mapOutbound(IoTPlantEvent event){
         return mapper.toBootstrapProfile(event);
     }
 }
