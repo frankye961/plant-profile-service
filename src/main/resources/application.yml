@@ -2,6 +2,12 @@ server:
   port: 8086
 
 spring:
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      chat:
+        options:
+          model: ${MODEL}
   application:
     name: plant-profile-service
 
