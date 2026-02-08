@@ -75,7 +75,7 @@ class PlantProfileServiceTest {
         ZoneProfileUpsertedEvent outbound = new ZoneProfileUpsertedEvent();
 
         when(zoneProfileRepository.findByZoneId("zone-1")).thenReturn(Mono.empty());
-        when(zoneMapper.mapFromZoneToZoneProfiling(eq(event.getZone()))).thenReturn(zoneProfiling);
+        when(zoneMapper.mapFromZoneToZoneProfiling(eq(event.getZone()), anyString())).thenReturn(zoneProfiling);
         when(zoneProfileRepository.save(zoneProfiling)).thenReturn(Mono.just(zoneProfiling));
         when(outboundMapper.toBootstrapProfile(event)).thenReturn(outbound);
 
@@ -84,7 +84,7 @@ class PlantProfileServiceTest {
                 .verifyComplete();
 
         verify(zoneProfileRepository).save(zoneProfiling);
-        verify(zoneMapper).mapFromZoneToZoneProfiling(eq(event.getZone()));
+        verify(zoneMapper).mapFromZoneToZoneProfiling(eq(event.getZone()), anyString());
     }
 
     @Test

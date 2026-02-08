@@ -34,14 +34,17 @@ public class PlantProfileService {
     public Mono<ZoneProfileUpsertedEvent> elaborateZoneProfiling(IoTPlantEvent event){
         String zoneId = event.getZone().getZoneId();
         Zone zone = event.getZone();
+        String deviceId = event.getDevice().getDeviceId();
 
         return zoneProfileRepository.findByZoneId(zoneId)
-                .switchIfEmpty(createZone(zone))
+                .switchIfEmpty(createZone(zone, deviceId))
                 .map(z -> mapOutbound(event));
     }
 
-    private Mono<ZoneProfiling> createZone(Zone zone){
-        ZoneProfiling zoneProfile = zoneMapper.mapFromZoneToZoneProfiling(zone);
+    private Mono<ZoneProfiling> createZone(Zone zone, String deviceId){
+        ZoneProfiling zoneProfile = zoneMapper.mapFromZoneToZoneProfiling(zone, deviceId);
+        zoneProfile.setDeviceId(deviceId);
+
         log.info("Zone to be saved {}", zoneProfile);
         return zoneProfileRepository.save(zoneProfile);
     }

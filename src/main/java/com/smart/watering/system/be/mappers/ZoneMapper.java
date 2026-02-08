@@ -9,18 +9,18 @@ public interface  ZoneMapper {
     @Mappings({
             @Mapping(target = "zoneId", source = "zone.zoneId"),
             @Mapping(target = "zoneName", source = "zone.zoneName"),
-            @Mapping(target = "deviceID", source = "device.deviceId"),
-
+            @Mapping(target = "deviceId", source = "deviceId"),
             // Bootstrap fields (not present in event)
             @Mapping(target = "active", constant = "true"),
             @Mapping(target = "profileVersion", expression = "java(1L)"),
-
+            @Mapping(target = "type", source = "type"),
             // These will be filled in @AfterMapping if null
-            @Mapping(target = "thresholds", ignore = true),
-            @Mapping(target = "constraints", ignore = true),
-            @Mapping(target = "calibrationPolicy", ignore = true)
+            @Mapping(target = "profile.thresholds", ignore = true),
+            @Mapping(target = "profile.constraints", ignore = true),
+            @Mapping(target = "profile.calibrationPolicy", ignore = true)
+            @Mapping(target = "")
     })
-    ZoneProfiling mapFromZoneToZoneProfiling(Zone zone);
+    ZoneProfiling mapFromZoneToZoneProfiling(Zone zone, String deviceId);
 
     @AfterMapping
     default void applyDefaults(@MappingTarget ZoneProfiling target, Zone source) {

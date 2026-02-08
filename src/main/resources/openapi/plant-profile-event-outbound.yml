@@ -40,7 +40,15 @@ components:
         - profileVersion
         - profile
         - gates
+        - zoneName
+        - linkedDeviceId
       properties:
+        zoneName:
+          type: string
+          description: Zone name
+        linkedDeviceId:
+          type: string
+          description: linked deviceId
         type:
           type: string
           enum: [ZONE_PROFILE_UPSERTED]
