@@ -1,76 +1,68 @@
 package com.smart.watering.system.be.mappers;
 
 import com.smart.watering.model.*;
-import com.smart.watering.system.be.database.model.ZoneProfiling;
 import org.mapstruct.*;
-import org.springframework.lang.Nullable;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
 public interface ZoneProfileOutboundMapper {
 
     @Mappings({
+            @Mapping(target = "type", constant = "ZONE_PROFILE_UPSERTED"),
+            @Mapping(target = "version", constant = "1"),
+            @Mapping(target = "messageId", source = "messageId"),
+            @Mapping(target = "correlationId", source = "correlationId"),
+            @Mapping(target = "ts", source = "ts"),
             @Mapping(target = "zoneId", source = "zone.zoneId"),
-            @Mapping(target = "zoneName", source = "zone.zoneName"),
-            @Mapping(target = "linkedDeviceId", source = "device.deviceId"),
-
-            // Bootstrap fields (not present in event)
-            @Mapping(target = "active", constant = "true"),
             @Mapping(target = "profileVersion", expression = "java(1L)"),
-
-            // These will be filled in @AfterMapping if null
-            @Mapping(target = "thresholds", ignore = true),
-            @Mapping(target = "constraints", ignore = true),
-            @Mapping(target = "calibrationPolicy", ignore = true)
+            @Mapping(target = "profile", source = "."),
+            @Mapping(target = "gates.wateringAllowed", constant = "true"),
+            @Mapping(target = "gates.blockedReason", constant = "OK"),
+            @Mapping(target = "deviceState", ignore = true)
     })
     ZoneProfileUpsertedEvent toBootstrapProfile(IoTPlantEvent event);
 
-    /**
-     * Bootstrap defaults (no user input) — conservative generic plant defaults.
-     * You can later tune these automatically and bump profileVersion in service logic.
-     */
+    @Mappings({
+            @Mapping(target = "zoneId", source = "zone.zoneId"),
+            @Mapping(target = "zoneName", source = "zone.zoneName"),
+            @Mapping(target = "linkedDeviceId", source = "device.deviceId"),
+            @Mapping(target = "active", constant = "true"),
+            @Mapping(target = "thresholds", ignore = true),
+            @Mapping(target = "constraints", ignore = true),
+            @Mapping(target = "calibrationPolicy", ignore = true),
+            @Mapping(target = "updatedAt", source = "ts"),
+            @Mapping(target = "source", constant = "BOOTSTRAP")
+    })
+    ZoneProfile toZoneProfile(IoTPlantEvent event);
+
     @AfterMapping
     default void applyDefaults(@MappingTarget ZoneProfile target, IoTPlantEvent source) {
         if (target.getThresholds() == null) {
-            ZoneThresholds t = new ZoneThresholds();
-            t.setSoilMoistureCriticalPct(30f);
-            t.setSoilMoistureLowPct(40f);
-            t.setSoilMoistureTargetMinPct(55f);
-            t.setSoilMoistureTargetMaxPct(75f);
-            // optional thresholds left null by default
-            target.setThresholds(t);
+            ZoneThresholds thresholds = new ZoneThresholds();
+            thresholds.setSoilMoistureCriticalPct(30f);
+            thresholds.setSoilMoistureLowPct(40f);
+            thresholds.setSoilMoistureTargetMinPct(55f);
+            thresholds.setSoilMoistureTargetMaxPct(75f);
+            target.setThresholds(thresholds);
         }
 
         if (target.getConstraints() == null) {
-            WateringConstraints c = new WateringConstraints();
-            c.setCooldownSeconds(6 * 60 * 60); // 6h
-            c.setMaxEventsPerDay(2);
+            WateringConstraints constraints = new WateringConstraints();
+            constraints.setCooldownSeconds(6 * 60 * 60);
+            constraints.setMaxEventsPerDay(2);
 
-            QuietHours q = new QuietHours();
-            q.setStart("22:00");
-            q.setEnd("07:00");
-            q.setTimezone("Europe/Warsaw"); // your project timezone
-            c.setQuietHours(q);
+            QuietHours quietHours = new QuietHours();
+            quietHours.setStart("22:00");
+            quietHours.setEnd("07:00");
+            quietHours.setTimezone("Europe/Warsaw");
+            constraints.setQuietHours(quietHours);
 
-            target.setConstraints(c);
+            target.setConstraints(constraints);
         }
 
         if (target.getCalibrationPolicy() == null) {
-            CalibrationPolicy cp = new CalibrationPolicy();
-
-            // Because your bridge already provides soilMoisturePct, trust it by default.
-            // If later you detect inconsistencies, your service can flip this to false.
-            cp.setTrustDevicePct(true);
-
-            // Optional: if device sometimes provides pct, sometimes not, you can decide here:
-            // cp.setTrustDevicePct(hasPct(source) != null && hasPct(source));
-
-            target.setCalibrationPolicy(cp);
+            CalibrationPolicy calibrationPolicy = new CalibrationPolicy();
+            calibrationPolicy.setTrustDevicePct(true);
+            target.setCalibrationPolicy(calibrationPolicy);
         }
-    }
-
-    @Nullable
-    default Boolean hasPct(IoTPlantEvent e) {
-        if (e == null || e.getZone() == null || e.getZone().getSensor() == null) return null;
-        return e.getZone().getSensor().getSoilMoisturePct() != null;
     }
 }
