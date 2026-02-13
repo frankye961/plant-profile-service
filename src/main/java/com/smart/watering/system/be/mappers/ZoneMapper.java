@@ -1,6 +1,10 @@
 package com.smart.watering.system.be.mappers;
 
 import com.smart.watering.model.Zone;
+import com.smart.watering.system.be.ai.model.records.Calibration;
+import com.smart.watering.system.be.ai.model.records.Constraints;
+import com.smart.watering.system.be.ai.model.records.QtHours;
+import com.smart.watering.system.be.ai.model.records.Threshold;
 import com.smart.watering.system.be.database.model.*;
 import org.mapstruct.*;
 
@@ -10,17 +14,30 @@ public interface  ZoneMapper {
             @Mapping(target = "zoneId", source = "zone.zoneId"),
             @Mapping(target = "zoneName", source = "zone.zoneName"),
             @Mapping(target = "deviceId", source = "deviceId"),
-            // Bootstrap fields (not present in event)
             @Mapping(target = "active", constant = "true"),
             @Mapping(target = "profileVersion", expression = "java(1L)"),
-            @Mapping(target = "type", source = "type"),
-            // These will be filled in @AfterMapping if null
-            @Mapping(target = "profile.thresholds", ignore = true),
-            @Mapping(target = "profile.constraints", ignore = true),
-            @Mapping(target = "profile.calibrationPolicy", ignore = true)
-            @Mapping(target = "")
+            @Mapping(target = "type", source = "zone.sensor.type"),
+            @Mapping(target = "thresholds", ignore = true),
+            @Mapping(target = "constraints", ignore = true),
+            @Mapping(target = "calibrationPolicy", ignore = true)
     })
     ZoneProfiling mapFromZoneToZoneProfiling(Zone zone, String deviceId);
+
+    @Mappings({
+            @Mapping(target = "tempMinC", ignore = true),
+            @Mapping(target = "tempMaxC", ignore = true),
+            @Mapping(target = "lightMinRaw", ignore = true)
+    })
+    ZoneThreshold mapFromZoneSuggestionToZoneThreshold(Threshold threshold);
+
+    @Mappings({
+            @Mapping(target = "quietHours", ignore = true)
+    })
+    WateringConstraints mapFromZoneSuggestionToWateringConstraints(Constraints constraints);
+    @Mappings({
+            @Mapping(target = "offsetPct", ignore = true)
+    })
+    CalibrationPolicy mapFromZoneSuggestionsToCalibrationPolicy(Calibration calibration);
 
     @AfterMapping
     default void applyDefaults(@MappingTarget ZoneProfiling target, Zone source) {

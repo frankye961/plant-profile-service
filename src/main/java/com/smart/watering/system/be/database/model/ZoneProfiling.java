@@ -17,6 +17,7 @@ public class ZoneProfiling {
     private String zoneId;
     private String zoneName;
     private String deviceId;
+    private String type;
 
     private boolean active;
     private long profileVersion;

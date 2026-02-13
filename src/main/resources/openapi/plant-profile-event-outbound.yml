@@ -12,20 +12,6 @@ paths: {}
 
 components:
   schemas:
-
-    # ----------------------------
-    # Event Union (optional helper)
-    # ----------------------------
-    PlantProfileEvent:
-      oneOf:
-        - $ref: "#/components/schemas/ZoneProfileUpsertedEvent"
-        - $ref: "#/components/schemas/ZoneProfileDeactivatedEvent"
-      discriminator:
-        propertyName: type
-        mapping:
-          ZONE_PROFILE_UPSERTED: "#/components/schemas/ZoneProfileUpsertedEvent"
-          ZONE_PROFILE_DEACTIVATED: "#/components/schemas/ZoneProfileDeactivatedEvent"
-
     # ----------------------------
     # Outbound Events
     # ----------------------------

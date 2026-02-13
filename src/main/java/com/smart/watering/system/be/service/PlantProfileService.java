@@ -3,7 +3,10 @@ package com.smart.watering.system.be.service;
 import com.smart.watering.model.*;
 import com.smart.watering.system.be.ai.engine.AiEngine;
 import com.smart.watering.system.be.ai.model.records.ZoneSuggestion;
+import com.smart.watering.system.be.database.model.CalibrationPolicy;
+import com.smart.watering.system.be.database.model.WateringConstraints;
 import com.smart.watering.system.be.database.model.ZoneProfiling;
+import com.smart.watering.system.be.database.model.ZoneThreshold;
 import com.smart.watering.system.be.database.repositories.ZoneProfileRepository;
 import com.smart.watering.system.be.mappers.ZoneMapper;
 import com.smart.watering.system.be.mappers.ZoneProfileOutboundMapper;
@@ -38,24 +41,37 @@ public class PlantProfileService {
 
         return zoneProfileRepository.findByZoneId(zoneId)
                 .switchIfEmpty(createZone(zone, deviceId))
+                .flatMap(this::updateZone)
                 .map(z -> mapOutbound(event));
+    }
+
+    private Mono<ZoneProfiling> updateZone(ZoneProfiling zone){
+        ZoneProfiling zoneEnriched = enrichZone(zone);
+        return zoneProfileRepository.insert(zoneEnriched);
     }
 
     private Mono<ZoneProfiling> createZone(Zone zone, String deviceId){
         ZoneProfiling zoneProfile = zoneMapper.mapFromZoneToZoneProfiling(zone, deviceId);
         zoneProfile.setDeviceId(deviceId);
-
         log.info("Zone to be saved {}", zoneProfile);
         return zoneProfileRepository.save(zoneProfile);
     }
 
-    private ZoneThresholds enrichZoneThreshold(Zone zone){
+    private ZoneProfiling enrichZone(ZoneProfiling zone){
         ZoneSuggestion suggestion = aiEngine.retrieveZoneSuggestion(zone);
-        log.info("suggestion from ai: {}", suggestion);
-        return null; //TODO enrich with suggestn from ai
+        ZoneThreshold tr = zoneMapper.mapFromZoneSuggestionToZoneThreshold(suggestion.threshold());
+        WateringConstraints constraints = zoneMapper.mapFromZoneSuggestionToWateringConstraints(suggestion.constraints());
+        CalibrationPolicy calibrationPolicy = zoneMapper.mapFromZoneSuggestionsToCalibrationPolicy(suggestion.calibration());
+        zone.setThresholds(tr);
+        zone.setConstraints(constraints);
+        zone.setCalibrationPolicy(calibrationPolicy);
+        return zone;
     }
+
 
     private ZoneProfileUpsertedEvent mapOutbound(IoTPlantEvent event){
         return mapper.toBootstrapProfile(event);
     }
+
+
 }

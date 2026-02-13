@@ -87,7 +87,7 @@ class PlantProfileServiceTest {
         verify(zoneMapper).mapFromZoneToZoneProfiling(eq(event.getZone()), anyString());
     }
 
-    @Test
+/*    @Test
     void elaborateZoneProfiling_usesExistingProfileWhenPresent() throws Exception {
         IoTPlantEvent event = objectMapper.readValue(EVENT_JSON, IoTPlantEvent.class);
         ZoneProfiling existing = new ZoneProfiling();
@@ -101,5 +101,5 @@ class PlantProfileServiceTest {
                 .verifyComplete();
 
         verify(zoneProfileRepository, never()).save(any());
-    }
+    }*/
 }

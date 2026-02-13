@@ -2,7 +2,6 @@ package com.smart.watering.system.be.events;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smart.watering.model.IoTPlantEvent;
-import com.smart.watering.model.PlantProfileEvent;
 import com.smart.watering.model.ZoneProfileUpsertedEvent;
 import com.smart.watering.system.be.service.PlantProfileService;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +35,7 @@ public class PlantProfileProcessor {
     }
 
     @Bean
-    public Function<Flux<Message<String>>, Flux<Message<?>>> ingestTelemetryData() {
+    public Function<Flux<Message<String>>, Flux<Message<?>>> processTelemetryData() {
         return inbound -> inbound
                 .flatMap(this::processMessage);
     }

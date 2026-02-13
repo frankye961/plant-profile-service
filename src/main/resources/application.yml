@@ -29,7 +29,7 @@ spring:
 
   cloud:
     function:
-      definition: ingestTelemetryData
+      definition: processTelemetryData
 
     stream:
       default-binder: kafka

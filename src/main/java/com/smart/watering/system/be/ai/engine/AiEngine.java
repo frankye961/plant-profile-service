@@ -2,23 +2,28 @@ package com.smart.watering.system.be.ai.engine;
 
 import com.smart.watering.model.Zone;
 import com.smart.watering.system.be.ai.model.records.ZoneSuggestion;
+import com.smart.watering.system.be.database.model.ZoneProfiling;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.converter.BeanOutputConverter;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
-@AllArgsConstructor
 public class AiEngine {
 
     @Value("${openai.model}")
     private static String aiModel;
     private final ChatClient client;
 
-    public ZoneSuggestion retrieveZoneSuggestion(Zone zone) {
+    public AiEngine(ChatClient.Builder client) {
+        this.client = client.build();
+    }
+
+    public ZoneSuggestion retrieveZoneSuggestion(ZoneProfiling zone) {
         var converter = getConverter();
         return client.prompt()
                 .system(generatePromptForSystem())
@@ -36,7 +41,7 @@ public class AiEngine {
                 .toString();
     }
 
-    private String generatePromptForUser(Zone zone, BeanOutputConverter<?> converter) {
+    private String generatePromptForUser(ZoneProfiling zone, BeanOutputConverter<?> converter) {
         return """
                 Generate thresholds, constraints, and calibrationPolicy for this zone.
                 Zone context:

@@ -11,5 +11,5 @@ import lombok.Setter;
 @AllArgsConstructor
 public class CalibrationPolicy {
     private boolean trustDevicePct;
-    private Float offsetPct; // optional
+    private Float offsetPct;
 }

@@ -10,10 +10,10 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ZoneThreshold {
-    private float soilMoistureCriticalPct;
-    private float soilMoistureLowPct;
-    private float soilMoistureTargetMinPct;
-    private float soilMoistureTargetMaxPct;
+    private double soilMoistureCriticalPct;
+    private double soilMoistureLowPct;
+    private double soilMoistureTargetMinPct;
+    private double soilMoistureTargetMaxPct;
 
     private Float tempMinC;
     private Float tempMaxC;

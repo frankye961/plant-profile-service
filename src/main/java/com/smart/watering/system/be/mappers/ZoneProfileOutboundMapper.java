@@ -12,15 +12,13 @@ public interface ZoneProfileOutboundMapper {
             @Mapping(target = "zoneId", source = "zone.zoneId"),
             @Mapping(target = "zoneName", source = "zone.zoneName"),
             @Mapping(target = "linkedDeviceId", source = "device.deviceId"),
-
-            // Bootstrap fields (not present in event)
-            //@Mapping(target = "active", constant = "true"),
             @Mapping(target = "profileVersion", expression = "java(1L)"),
             @Mapping(target = "type", ignore = true),
-            // These will be filled in @AfterMapping if null
             @Mapping(target = "profile.thresholds", ignore = true),
             @Mapping(target = "profile.constraints", ignore = true),
-            @Mapping(target = "profile.calibrationPolicy", ignore = true)
+            @Mapping(target = "profile.calibrationPolicy", ignore = true),
+            @Mapping(target = "deviceState", ignore = true),
+            @Mapping(target = "gates", ignore = true)
     })
     ZoneProfileUpsertedEvent toBootstrapProfile(IoTPlantEvent event);
 

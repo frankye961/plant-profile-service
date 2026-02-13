@@ -26,6 +26,6 @@ public class TelemetryEventListener {
 
     @Bean
     public Function<Flux<Message<String>>, Message<?>> ingestTelemetryData(){
-        
+        return null;
     }
 }
