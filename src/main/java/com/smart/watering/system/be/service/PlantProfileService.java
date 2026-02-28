@@ -33,15 +33,13 @@ public class PlantProfileService {
 
     public Mono<ZoneProfileUpsertedEvent> elaborateZoneProfiling(IoTPlantEvent event){
         String zoneId = event.getZone().getZoneId();
-        Zone zone = event.getZone();
-
         return zoneProfileRepository.findByZoneId(zoneId)
-                .switchIfEmpty(createZone(zone))
+                .switchIfEmpty(createZone(event))
                 .map(z -> mapOutbound(event));
     }
 
-    private Mono<ZoneProfiling> createZone(Zone zone){
-        ZoneProfiling zoneProfile = zoneMapper.mapFromZoneToZoneProfiling(zone);
+    private Mono<ZoneProfiling> createZone(IoTPlantEvent event){
+        ZoneProfiling zoneProfile = zoneMapper.mapFromEventToZoneProfiling(event);
         log.info("Zone to be saved {}", zoneProfile);
         return zoneProfileRepository.save(zoneProfile);
     }
